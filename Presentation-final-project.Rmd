@@ -1,0 +1,78 @@
+---
+title: "Final Project - Developing data products"
+author: "Facundo Perez"
+date: "27/4/2020"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## App for explore data from nba players stats 2018-19
+
+The app can be found in [link](https://coyam11.shinyapps.io/week4_app/)
+
+The dataset consist in the player that avergare more than 30 minutes per game in the nba 2018-19 season.
+Look the head
+``` {r echo=FALSE, message=FALSE}
+nba1819<-read.csv("nba1819.csv")
+```
+
+``` {r echo = TRUE, message=FALSE, comment=''}
+head(nba1819)
+```
+
+## Structure
+
+The app consists in three tabs:
+
+- Plot: Scatter plot of the selected variables, with size points by the third variable. Can be added a linear model
+- Table: Table of data with the name of the player, and the three stats that the user has selected
+- Documentation: A series of steps for understand the functionality of the app
+
+
+## Example Plot
+
+1. Select Turnovers in x axis
+2. Select Asists on y axis
+3. Select Points for points size 
+4. Check the box for set linear model
+
+``` {r echo=FALSE, message=FALSE, fig.align='center', warning=FALSE}
+library(ggplot2)
+library(plotly)
+library(dplyr)
+g <- ggplot(nba1819, aes(Turnovers, Asists))
+g <- g + geom_point(aes(size=Points, label_value=Player), colour="darkgreen", alpha=0.7)
+g <- g + geom_smooth(method='lm', col="blue")
+g <-ggplotly(g)
+g
+```
+
+### Table output
+
+``` {r echo = FALSE, message= FALSE, warning=FALSE, comment='', fig.align='left'}
+nba1819[1:10,c("Player", "Turnovers", "Asists", "Points")]
+
+```
+
+## Look at the server functionality
+
+``` {r echo=TRUE, eval=FALSE}
+shinyServer(function(input, output) {
+    dataInput <- reactive({
+        nba1819[,c("Player", input$X, input$Y, input$S)]
+        })
+    output$tabla1 <- renderTable({dataInput()})
+     output$Scatplot <- renderPlotly({
+          g<- ggplot(dataInput(), aes(dataInput()[,2], dataInput()[,3]))
+          g <- g + geom_point(aes(size=dataInput()[,4], label_value=Player), colour="darkgreen", alpha=0.7)
+          g <- g + labs(x=colnames(dataInput())[2], y=colnames(dataInput()[3]))  
+          if(input$fit){
+           g <- g + geom_smooth(method='lm', col="blue")
+           }
+         ggplotly(g)
+         })
+})
+```
